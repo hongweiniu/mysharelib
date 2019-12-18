@@ -7,9 +7,11 @@ git clone https://github.com/hongweiniu/mysharelib.git
 ```
 
 ```python
-from mysharelib import *
 from mysharelib import mymath
+from mysharelib.mymath import *
 ```
+
+建议用第一种方式，不然不安全。
 
 ## 脚本和函数说明
 
