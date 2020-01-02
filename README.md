@@ -2,9 +2,26 @@
 
 ## 使用方法
 
+克隆仓库：
+
 ```bash
 git clone https://github.com/hongweiniu/mysharelib.git
 ```
+
+可以把仓库放到一个地方，每次用之前pull一下，保证代码是最新版。
+
+```bash
+cd /some/mysharelib
+git pull
+```
+
+然后实际用的时候建议把软链接放到当前目录。
+
+```bash
+ln -sf /some/mysharelib .
+```
+
+调用库：
 
 ```python
 from mysharelib import mymath
