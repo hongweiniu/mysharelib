@@ -15,11 +15,13 @@ cd /some/mysharelib
 git pull
 ```
 
-然后实际用的时候建议把软链接放到当前目录。
+然后实际用的时候要把mysharelib所在目录加到PYTHONPATH环境变量
 
 ```bash
-ln -sf /some/mysharelib .
+export PYTHONPATH=/some:$PYTHONPATH
 ```
+
+当然，也可以把这个语句直接加到.bashrc
 
 调用库：
 
@@ -57,3 +59,9 @@ mymath.cal_mae(a, b)
 参数：a, b（一维numpy array）
 
 返回值：相关系数
+
+#### mymath.cal_se
+
+参数：a（一维numpy array）
+
+返回值：标准误差
