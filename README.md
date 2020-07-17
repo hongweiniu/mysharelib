@@ -1,6 +1,4 @@
-# mysharelib
-
-## 使用方法
+# 使用方法
 
 克隆仓库：
 
@@ -23,20 +21,21 @@ export PYTHONPATH=/some:$PYTHONPATH
 
 当然，也可以把这个语句直接加到.bashrc
 
-调用库：
+调用模块：
 
 ```python
-from mysharelib import mymath
-from mysharelib.mymath import *
+from mytool import io
 ```
 
 建议用第一种方式，不然不安全。
 
-## 脚本和函数说明
+# 脚本和函数说明
 
-### mymath.h
+## mymath
 
 一些包装好的数学函数
+
+### mymath.py
 
 #### mymath.cal_mae
 
@@ -65,3 +64,15 @@ mymath.cal_mae(a, b)
 参数：a（一维numpy array）
 
 返回值：标准误差
+
+## mytool
+
+一些常用工具
+
+### io.py
+
+#### io.read_csv_number_sign
+
+参数：文件名，第一行带井号
+
+返回值：data_frame
