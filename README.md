@@ -64,15 +64,3 @@ mymath.cal_mae(a, b)
 参数：a（一维numpy array）
 
 返回值：标准误差
-
-## mytool
-
-一些常用工具
-
-### io.py
-
-#### io.read_csv_number_sign
-
-参数：文件名，第一行带井号
-
-返回值：data_frame
