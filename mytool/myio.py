@@ -8,6 +8,9 @@ from io import StringIO
 import pandas as pd
 import numpy as np
 from ase import io
+from ase import Atoms
+from ase.calculators.singlepoint import SinglePointCalculator as SPC
+from ase.calculators import calculator
 
 
 def read_csv_number_sign(filename):
@@ -102,3 +105,91 @@ def extxyz2dump(f_extxyz, f_dump):
         f_output.write('ITEM: ATOMS id type x y z\n')
         for j in range(len(positions)):
             f_output.write('%d %d %f %f %f\n' %(j, atom_types[j], positions[j][0], positions[j][1], positions[j][2]))
+
+
+def outcar2extxyz(f_outcar, f_extxyz, ele):
+    '''
+    功能
+    ----------
+    将outcar文件转为extxyz文件
+
+    参数
+    ----------
+    f_outcar: outcar文件名
+    f_extxyz: extxyz文件名
+    ele: 元素列表(需按顺序排列)
+
+    返回值
+    ----------
+    无
+    '''
+    calculator.all_properties.append('energy')
+    calculator.all_properties.append('forces')
+    type_num = list()
+    with open(f_outcar, 'r') as filename:
+        while True:
+            line = filename.readline()
+            if not line:
+                break
+            search = re.search(r'ions per type =', line)
+            if search:
+                pattern = re.compile(r'\d+')
+                result = pattern.findall(line)
+                for i in result:
+                    type_num.append(int(i))
+                break
+    system_size = np.sum(type_num)
+    atoms = list()
+    with open(f_outcar, 'r') as filename:
+        while True:
+            line = filename.readline()
+            if not line:
+                break
+            search = re.search(r'VOLUME and BASIS-vectors are now', line)
+            if search:
+                cell = np.zeros((3, 3))
+                postitions = np.zeros((system_size, 3))
+                forces = np.zeros((system_size, 3))
+                energy = 0.0
+                while True:
+                    line = filename.readline()
+                    search = re.search(r'direct lattice vectors', line)
+                    if search:
+                        for i in range(3):
+                            line = filename.readline()
+                            search = re.search(r'(\S+)\s+(\S+)\s+(\S+)\s+', line)
+                            for j in range(3):
+                                cell[i][j] = float(search.group(j+1))
+                        # print(cell)
+                        break
+                while True:
+                    line = filename.readline()
+                    search = re.search(r'POSITION\s+TOTAL-FORCE', line)
+                    if search:
+                        line = filename.readline()
+                        for i in range(system_size):
+                            line = filename.readline()
+                            search = re.search(r'(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)', line)
+                            for j in range(3):
+                                postitions[i][j] = float(search.group(j+1))
+                                forces[i][j] = float(search.group(j+4))
+                        # print(postitions)
+                        # print(forces)
+                        break
+                while True:
+                    line = filename.readline()
+                    search = re.search(r'sigma->0\S\s+=\s+(\S+)', line)
+                    if search:
+                        energy = float(search.group(1))
+                        # print(energy)
+                        break
+                sysbols = ''
+                for i in range(len(type_num)):
+                    sysbols += ele[i]
+                    sysbols += '%d' % type_num[i]
+                # print(sysbols)
+                atoms_append = Atoms(symbols=sysbols, positions=postitions, cell=cell, pbc=True)
+                calc = SPC(atoms=atoms_append, energy=energy, forces=forces)
+                atoms_append.set_calculator(calc)
+                atoms += [atoms_append]
+    io.write(f_extxyz, atoms, format='extxyz')
