@@ -71,7 +71,7 @@ def extxyz2dump(f_extxyz, f_dump):
     '''
     功能
     ----------
-    将extxyz文件转为LAMMPS dump文件，注意仅支持正交盒子
+    将extxyz文件转为LAMMPS dump文件
 
     参数
     ----------
@@ -86,7 +86,20 @@ def extxyz2dump(f_extxyz, f_dump):
     f_output = open(f_dump, 'w')
     for i in range(len(atoms)):
         cell = np.array(atoms[i].get_cell())
+        volume = atoms[i].get_volume()
+        vec_A = cell[0]
+        vec_B = cell[1]
+        vec_C = cell[2]
+        lx = np.linalg.norm(vec_A)
+        xy = np.inner(vec_B, vec_A/np.linalg.norm(vec_A))
+        ly = np.sqrt(np.linalg.norm(vec_B)**2-xy**2)
+        xz = np.inner(vec_C, vec_A/np.linalg.norm(vec_A))
+        yz = (np.inner(vec_B, vec_C)-xy*xz)/ly
+        lz = np.sqrt(np.linalg.norm(vec_C)**2-xz**2-yz**2)
         positions = atoms[i].get_positions()
+        positions = np.dot(positions, np.array([[lx, xy, xz], [0.0, ly, yz], [0.0, 0.0, lz]]))
+        positions /= volume
+        positions = np.dot(positions, np.array([np.cross(vec_B, vec_C), np.cross(vec_C, vec_A), np.cross(vec_A, vec_B)]))
         chemical_symbols = atoms[i].get_chemical_symbols()
         chemical_symbols_list = list()
         atom_types = list()
@@ -98,10 +111,10 @@ def extxyz2dump(f_extxyz, f_dump):
         f_output.write('%d\n' % i)
         f_output.write('ITEM: NUMBER OF ATOMS\n')
         f_output.write('%d\n' % len(positions))
-        f_output.write('ITEM: BOX BOUNDS pp pp pp\n')
-        f_output.write('0.0 %f\n' % cell[0][0])
-        f_output.write('0.0 %f\n' % cell[1][1])
-        f_output.write('0.0 %f\n' % cell[2][2])
+        f_output.write('ITEM: BOX BOUNDS xy xz yz pp pp pp\n')
+        f_output.write('0.0 %f %f\n' % (lx, xy))
+        f_output.write('0.0 %f %f\n' % (ly, xz))
+        f_output.write('0.0 %f %f\n' % (lz, yz))
         f_output.write('ITEM: ATOMS id type x y z\n')
         for j in range(len(positions)):
             f_output.write('%d %d %f %f %f\n' %(j, atom_types[j], positions[j][0], positions[j][1], positions[j][2]))
