@@ -116,7 +116,7 @@ def extxyz2dump(f_extxyz, f_dump):
         f_output.write('0.0 %f %f\n' % (lz, yz))
         f_output.write('ITEM: ATOMS id type x y z\n')
         for j in range(len(positions)):
-            f_output.write('%d %d %f %f %f\n' %(j, atom_types[j], positions[j][0], positions[j][1], positions[j][2]))
+            f_output.write('%d %d %f %f %f\n' %(j+1, atom_types[j], positions[j][0], positions[j][1], positions[j][2]))
     f_output.close()
 
 
