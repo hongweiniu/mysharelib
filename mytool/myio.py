@@ -13,58 +13,57 @@ from ase.calculators.singlepoint import SinglePointCalculator as SPC
 from ase.calculators import calculator
 
 
-def read_csv_number_sign(filename):
+def extxyz2data(f_extxyz, f_data, frame):
     '''
     功能
     ----------
-    用pandas的read_csv读带#的文件
+    将extxyz文件转为LAMMPS data文件
 
     参数
     ----------
-    filename: 文件名
+    f_extxyz: extxyz文件名
+    f_data: LAMMPS dada文件名
+    frame: which frame of extxyz to convert
 
     返回值
     ----------
-    data frame
+    无
     '''
-    data_frame = pd.read_csv(filename, sep=r'\s+', names=open(filename, 'r').readline().split()[1:], skiprows=1)
-    return data_frame
-
-
-def read_lammps_thermo(filename):
-    '''
-    功能
-    ----------
-    读LAMMPS的thermo文件
-
-    参数
-    ----------
-    filename: 文件名
-
-    返回值
-    ----------
-    data frame
-    '''
-    f_lammps_out = open(filename, 'r')
-    str_lammps_out = ''
-    while True:
-        line = f_lammps_out.readline()
-        if not line:
-            break
-        search = re.search('Step', line)
-        if search:
-            str_lammps_out = line
-            while True:
-                line = f_lammps_out.readline()
-                search1 = re.search(r'\s+\d+\s+[(\-|\+)?\d+(\.\d+)?\s+]+\n$', line)
-                search2 = re.search(r'Loop time of', line)
-                if search1:
-                    str_lammps_out += line
-                if search2:
-                    break
-    data = StringIO(str_lammps_out)
-    data_frame = pd.read_csv(data, sep=r'\s+')
-    return data_frame
+    atoms = io.read(f_extxyz, index='%d' % frame, format='extxyz')
+    f_output = open(f_data, 'w')
+    cell = np.array(atoms.get_cell())
+    volume = atoms.get_volume()
+    vec_A = cell[0]
+    vec_B = cell[1]
+    vec_C = cell[2]
+    lx = np.linalg.norm(vec_A)
+    xy = np.inner(vec_B, vec_A/np.linalg.norm(vec_A))
+    ly = np.sqrt(np.linalg.norm(vec_B)**2-xy**2)
+    xz = np.inner(vec_C, vec_A/np.linalg.norm(vec_A))
+    yz = (np.inner(vec_B, vec_C)-xy*xz)/ly
+    lz = np.sqrt(np.linalg.norm(vec_C)**2-xz**2-yz**2)
+    positions = atoms.get_positions()
+    positions = np.dot(positions, np.array([[lx, xy, xz], [0.0, ly, yz], [0.0, 0.0, lz]]))
+    positions /= volume
+    positions = np.dot(positions, np.array([np.cross(vec_B, vec_C), np.cross(vec_C, vec_A), np.cross(vec_A, vec_B)]))
+    chemical_symbols = atoms.get_chemical_symbols()
+    chemical_symbols_list = list()
+    atom_types = list()
+    for j in range(len(chemical_symbols)):
+        if chemical_symbols[j] not in chemical_symbols_list:
+            chemical_symbols_list.append(chemical_symbols[j])
+        atom_types.append(chemical_symbols_list.index(chemical_symbols[j])+1)
+    f_output.write('data.txt (written by Ricky)\n\n')
+    f_output.write('%d atoms\n' % len(positions))
+    f_output.write('%d atom types\n' % len(chemical_symbols_list))
+    f_output.write('0.0 %f xlo xhi\n' % lx)
+    f_output.write('0.0 %f ylo yhi\n' % ly)
+    f_output.write('0.0 %f zlo zhi\n' % lz)
+    f_output.write('%f %f %f xy xz yz\n\n' % (xy, xz, yz))
+    f_output.write('Atoms\n\n')
+    for i in range(len(positions)):
+        f_output.write('%d %d %f %f %f\n' % (i+1, atom_types[i], positions[i][0], positions[i][1], positions[i][2]))
+    f_output.close()
 
 
 def extxyz2dump(f_extxyz, f_dump):
@@ -118,6 +117,7 @@ def extxyz2dump(f_extxyz, f_dump):
         f_output.write('ITEM: ATOMS id type x y z\n')
         for j in range(len(positions)):
             f_output.write('%d %d %f %f %f\n' %(j, atom_types[j], positions[j][0], positions[j][1], positions[j][2]))
+    f_output.close()
 
 
 def outcar2extxyz(f_outcar, f_extxyz, ele):
@@ -206,3 +206,57 @@ def outcar2extxyz(f_outcar, f_extxyz, ele):
                 atoms_append.set_calculator(calc)
                 atoms += [atoms_append]
     io.write(f_extxyz, atoms, format='extxyz')
+
+
+def read_csv_number_sign(filename):
+    '''
+    功能
+    ----------
+    用pandas的read_csv读带#的文件
+
+    参数
+    ----------
+    filename: 文件名
+
+    返回值
+    ----------
+    data frame
+    '''
+    data_frame = pd.read_csv(filename, sep=r'\s+', names=open(filename, 'r').readline().split()[1:], skiprows=1)
+    return data_frame
+
+
+def read_lammps_thermo(filename):
+    '''
+    功能
+    ----------
+    读LAMMPS的thermo文件
+
+    参数
+    ----------
+    filename: 文件名
+
+    返回值
+    ----------
+    data frame
+    '''
+    f_lammps_out = open(filename, 'r')
+    str_lammps_out = ''
+    while True:
+        line = f_lammps_out.readline()
+        if not line:
+            break
+        search = re.search('Step', line)
+        if search:
+            str_lammps_out = line
+            while True:
+                line = f_lammps_out.readline()
+                search1 = re.search(r'\s+\d+\s+[(\-|\+)?\d+(\.\d+)?\s+]+\n$', line)
+                search2 = re.search(r'Loop time of', line)
+                if search1:
+                    str_lammps_out += line
+                if search2:
+                    break
+    data = StringIO(str_lammps_out)
+    data_frame = pd.read_csv(data, sep=r'\s+')
+    return data_frame
