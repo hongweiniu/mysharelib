@@ -25,5 +25,6 @@ export PYTHONPATH=/.../some/mysharelib:$PYTHONPATH
 调用模块例子：
 
 ```python
-from mytool import io
+from mytool import myio
+myio.extxyz2dump('test.xyz', 'test.dump.atom')
 ```
