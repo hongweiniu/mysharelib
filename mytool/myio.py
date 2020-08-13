@@ -110,7 +110,20 @@ def extxyz2dump(f_extxyz, f_dump):
         f_output.write('%d\n' % i)
         f_output.write('ITEM: NUMBER OF ATOMS\n')
         f_output.write('%d\n' % len(positions))
-        f_output.write('ITEM: BOX BOUNDS xy xz yz pp pp pp\n')
+        f_output.write('ITEM: BOX BOUNDS xy xz yz ')
+        pbc = atoms[i].get_pbc()
+        if pbc[0] == True:
+            f_output.write('pp ')
+        else:
+            f_output.write('xx ')
+        if pbc[1] == True:
+            f_output.write('pp ')
+        else:
+            f_output.write('yy ')
+        if pbc[2] == True:
+            f_output.write('pp\n')
+        else:
+            f_output.write('zz\n')
         f_output.write('0.0 %f %f\n' % (lx, xy))
         f_output.write('0.0 %f %f\n' % (ly, xz))
         f_output.write('0.0 %f %f\n' % (lz, yz))
