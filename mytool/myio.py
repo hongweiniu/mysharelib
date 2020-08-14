@@ -54,14 +54,26 @@ def atoms2data(atoms, f_data, bond_list=None):
         atom_types.append(chemical_symbols_list.index(chemical_symbols[j])+1)
     f_output.write('data.txt (written by Ricky)\n\n')
     f_output.write('%d atoms\n' % len(positions))
+    if bond_list is not None:
+        f_output.write('%d bonds\n' % len(bond_list))
     f_output.write('%d atom types\n' % len(chemical_symbols_list))
+    if bond_list is not None:
+        f_output.write('%d bond types\n' % len(np.unique(bond_list[:, 0])))
+    f_output.write('\n')
     f_output.write('0.0 %f xlo xhi\n' % lx)
     f_output.write('0.0 %f ylo yhi\n' % ly)
     f_output.write('0.0 %f zlo zhi\n' % lz)
     f_output.write('%f %f %f xy xz yz\n\n' % (xy, xz, yz))
     f_output.write('Atoms\n\n')
-    for i in range(len(positions)):
-        f_output.write('%d %d %f %f %f\n' % (i+1, atom_types[i], positions[i][0], positions[i][1], positions[i][2]))
+    if bond_list is None:
+        for i in range(len(positions)):
+            f_output.write('%d %d %f %f %f\n' % (i+1, atom_types[i], positions[i][0], positions[i][1], positions[i][2]))
+    else:
+        for i in range(len(positions)):
+            f_output.write('%d %d %d 1.0 %f %f %f\n' % (i+1, np.where(bond_list[:, 1:] == i)[0][0]+1, atom_types[i], positions[i][0], positions[i][1], positions[i][2]))
+        f_output.write('\nBonds\n\n')
+        for i in range(len(bond_list)):
+            f_output.write('%d %d %d %d\n' % (i+1, bond_list[i][0], bond_list[i][1]+1, bond_list[i][2]+1))
     f_output.close()
 
 
