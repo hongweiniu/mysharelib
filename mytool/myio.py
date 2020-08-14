@@ -13,6 +13,58 @@ from ase.calculators.singlepoint import SinglePointCalculator as SPC
 from ase.calculators import calculator
 
 
+def atoms2data(atoms, f_data, bond_list=None):
+    '''
+    功能
+    ----------
+    将atoms(单帧)转为LAMMPS data文件
+
+    参数
+    ----------
+    atoms: ASE中的atoms对象
+    f_data: LAMMPS dada文件名
+    bond_list: bond list to write, optional
+
+    返回值
+    ----------
+    无
+    '''
+    f_output = open(f_data, 'w')
+    cell = np.array(atoms.get_cell())
+    volume = atoms.get_volume()
+    vec_A = cell[0]
+    vec_B = cell[1]
+    vec_C = cell[2]
+    lx = np.linalg.norm(vec_A)
+    xy = np.inner(vec_B, vec_A/np.linalg.norm(vec_A))
+    ly = np.sqrt(np.linalg.norm(vec_B)**2-xy**2)
+    xz = np.inner(vec_C, vec_A/np.linalg.norm(vec_A))
+    yz = (np.inner(vec_B, vec_C)-xy*xz)/ly
+    lz = np.sqrt(np.linalg.norm(vec_C)**2-xz**2-yz**2)
+    positions = atoms.get_positions()
+    positions = np.dot(positions, np.array([[lx, xy, xz], [0.0, ly, yz], [0.0, 0.0, lz]]))
+    positions /= volume
+    positions = np.dot(positions, np.array([np.cross(vec_B, vec_C), np.cross(vec_C, vec_A), np.cross(vec_A, vec_B)]))
+    chemical_symbols = atoms.get_chemical_symbols()
+    chemical_symbols_list = list()
+    atom_types = list()
+    for j in range(len(chemical_symbols)):
+        if chemical_symbols[j] not in chemical_symbols_list:
+            chemical_symbols_list.append(chemical_symbols[j])
+        atom_types.append(chemical_symbols_list.index(chemical_symbols[j])+1)
+    f_output.write('data.txt (written by Ricky)\n\n')
+    f_output.write('%d atoms\n' % len(positions))
+    f_output.write('%d atom types\n' % len(chemical_symbols_list))
+    f_output.write('0.0 %f xlo xhi\n' % lx)
+    f_output.write('0.0 %f ylo yhi\n' % ly)
+    f_output.write('0.0 %f zlo zhi\n' % lz)
+    f_output.write('%f %f %f xy xz yz\n\n' % (xy, xz, yz))
+    f_output.write('Atoms\n\n')
+    for i in range(len(positions)):
+        f_output.write('%d %d %f %f %f\n' % (i+1, atom_types[i], positions[i][0], positions[i][1], positions[i][2]))
+    f_output.close()
+
+
 def extxyz2data(f_extxyz, f_data, frame):
     '''
     功能
