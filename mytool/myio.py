@@ -29,6 +29,11 @@ def atoms2data(atoms, f_data, bond_list=None):
     ----------
     无
     '''
+    def get_mol_id(atom_id, bond_list):
+        if len(np.where(bond_list[:, 1:] == atom_id)[0]) == 0:
+            return -1
+        else:
+            return np.where(bond_list[:, 1:] == atom_id)[0][0]
     f_output = open(f_data, 'w')
     cell = np.array(atoms.get_cell())
     volume = atoms.get_volume()
@@ -70,7 +75,7 @@ def atoms2data(atoms, f_data, bond_list=None):
             f_output.write('%d %d %f %f %f\n' % (i+1, atom_types[i], positions[i][0], positions[i][1], positions[i][2]))
     else:
         for i in range(len(positions)):
-            f_output.write('%d %d %d 1.0 %f %f %f\n' % (i+1, np.where(bond_list[:, 1:] == i)[0][0]+1, atom_types[i], positions[i][0], positions[i][1], positions[i][2]))
+            f_output.write('%d %d %d 1.0 %f %f %f\n' % (i+1, get_mol_id(i, bond_list)+1, atom_types[i], positions[i][0], positions[i][1], positions[i][2]))
         f_output.write('\nBonds\n\n')
         for i in range(len(bond_list)):
             f_output.write('%d %d %d %d\n' % (i+1, bond_list[i][0], bond_list[i][1]+1, bond_list[i][2]+1))
