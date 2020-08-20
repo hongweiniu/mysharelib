@@ -243,7 +243,7 @@ def outcar2extxyz(f_outcar, f_extxyz, ele):
             search = re.search(r'VOLUME and BASIS-vectors are now', line)
             if search:
                 cell = np.zeros((3, 3))
-                postitions = np.zeros((system_size, 3))
+                positions = np.zeros((system_size, 3))
                 forces = np.zeros((system_size, 3))
                 energy = 0.0
                 while True:
@@ -266,9 +266,9 @@ def outcar2extxyz(f_outcar, f_extxyz, ele):
                             line = filename.readline()
                             search = re.search(r'(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)', line)
                             for j in range(3):
-                                postitions[i][j] = float(search.group(j+1))
+                                positions[i][j] = float(search.group(j+1))
                                 forces[i][j] = float(search.group(j+4))
-                        # print(postitions)
+                        # print(positions)
                         # print(forces)
                         break
                 while True:
@@ -283,7 +283,7 @@ def outcar2extxyz(f_outcar, f_extxyz, ele):
                     sysbols += ele[i]
                     sysbols += '%d' % type_num[i]
                 # print(sysbols)
-                atoms_append = Atoms(symbols=sysbols, positions=postitions, cell=cell, pbc=True)
+                atoms_append = Atoms(symbols=sysbols, positions=positions, cell=cell, pbc=True)
                 calc = SPC(atoms=atoms_append, energy=energy, forces=forces)
                 atoms_append.set_calculator(calc)
                 atoms += [atoms_append]
