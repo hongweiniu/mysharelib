@@ -290,6 +290,41 @@ def outcar2extxyz(f_outcar, f_extxyz, ele):
     io.write(f_extxyz, atoms, format='extxyz')
 
 
+def read_bond_list_from_data(f_data):
+    '''
+    功能
+    ----------
+    从LAMMPS data文件读bond_list(如果有)
+
+    参数
+    ----------
+    f_data: LAMMPS dada文件名
+
+    返回值
+    ----------
+    bond_list(如果有)
+    '''
+    bond_list = np.zeros((0, 3), dtype=int)
+    f_input = open(f_data, 'r')
+    while True:
+        line = f_input.readline()
+        if not line:
+            break
+        search = re.search(r'Bonds', line)
+        if search:
+            while True:
+                line = f_input.readline()
+                if not line:
+                    return bond_list
+                search = re.search(r'\d+\s+(\d+)\s+(\d+)\s+(\d+)\s+', line)
+                if search:
+                    bond_list_append = np.zeros((1, 3), dtype=int)
+                    for i in range(3):
+                        bond_list_append[0][i] = search.group(i+1)
+                    bond_list = np.r_[bond_list, bond_list_append]
+    f_input.close()
+
+
 def read_csv_number_sign(filename):
     '''
     功能
