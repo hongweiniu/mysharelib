@@ -82,6 +82,68 @@ def atoms2data(atoms, f_data, bond_list=None):
     f_output.close()
 
 
+def data2atoms(f_data, style):
+    '''
+    功能
+    ----------
+    将LAMMPS data文件转为atoms(单帧)
+
+    参数
+    ----------
+    f_data: LAMMPS dada文件名
+    style: LAMMPS data文件的style, 比如atomic, charge, full
+
+    返回值
+    ----------
+    ASE中的atoms对象((单帧))
+    '''
+    f_input = open(f_data, 'r')
+    if style == 'full':
+        system_size = 0
+        xlo = 0.0
+        xhi = 0.0
+        ylo = 0.0
+        yhi = 0.0
+        zlo = 0.0
+        zhi = 0.0
+        while True:
+            line = f_input.readline()
+            if not line:
+                break
+            search = re.search(r'(\d+)\s+atoms', line)
+            if search:
+                system_size = int(search.group(1))
+            search = re.search(r'(\S+)\s+(\S+)\s+xlo\s+xhi', line)
+            if search:
+                xlo = float(search.group(1))
+                xhi = float(search.group(2))
+            search = re.search(r'(\S+)\s+(\S+)\s+ylo\s+yhi', line)
+            if search:
+                ylo = float(search.group(1))
+                yhi = float(search.group(2))
+            search = re.search(r'(\S+)\s+(\S+)\s+zlo\s+zhi', line)
+            if search:
+                zlo = float(search.group(1))
+                zhi = float(search.group(2))
+        f_input.seek(0)
+        types = np.zeros(system_size, dtype=int)
+        positions = np.zeros((system_size, 3))
+        while True:
+            line = f_input.readline()
+            if not line:
+                break
+            search = re.search(r'Atoms\n', line)
+            if search:
+                line = f_input.readline()
+                for i in range(system_size):
+                    line = f_input.readline().split()
+                    for j in range(3):
+                        types[i] = int(line[2])
+                        positions[i][j] = float(line[4+j])
+        atoms = Atoms(symbols=types, positions=positions, cell=np.array([xhi-xlo, yhi-ylo, zhi-zlo]), pbc=True)
+        return atoms
+
+
 def extxyz2data(f_extxyz, f_data, frame):
     '''
     功能
@@ -363,12 +425,12 @@ def read_lammps_thermo(filename):
         line = f_lammps_out.readline()
         if not line:
             break
-        search = re.search('Step', line)
+        search = re.search('Temp', line)
         if search:
             str_lammps_out = line
             while True:
                 line = f_lammps_out.readline()
-                search1 = re.search(r'\s+\d+\s+[(\-|\+)?\d+(\.\d+)?\s+]+\n$', line)
+                search1 = re.search(r'[(\-|\+)?\d+(\.\d+)?\s+]+\n$', line)
                 search2 = re.search(r'Loop time of', line)
                 if search1:
                     str_lammps_out += line
