@@ -82,6 +82,41 @@ def atoms2data(atoms, f_data, bond_list=None):
     f_output.close()
 
 
+def atoms2ipixyz(atoms, f_ipixyz):
+    '''
+    功能
+    ----------
+    将atoms(单帧)转为ipi data文件
+
+    参数
+    ----------
+    atoms: ASE中的atoms对象
+    f_ipixyz: ipi xyz文件
+
+    返回值
+    ----------
+    无
+    '''
+    positions = atoms.get_positions()
+    cell = atoms.get_cell()
+    symbols = atoms.get_chemical_symbols()
+    system_size = len(positions)
+    file_ipixyz = open(f_ipixyz, 'w')
+    file_ipixyz.write('%d\n' % system_size)
+    file_ipixyz.write('# CELL(abcABC): ')
+    for i in range(3):
+        file_ipixyz.write('%f ' % cell[i][i])
+    for i in range(3):
+        file_ipixyz.write('90.0 ')
+    file_ipixyz.write('Traj: positions{angstrom} Step: 0 Bead: 0 cell{angstrom}\n')
+    for i in range(system_size):
+        file_ipixyz.write('%s ' % symbols[i])
+        for j in range(3):
+            file_ipixyz.write('%f ' % positions[i][j])
+        file_ipixyz.write('\n')
+    file_ipixyz.close()
+
+
 def data2atoms(f_data, ele,style):
     '''
     功能
