@@ -82,7 +82,7 @@ def atoms2data(atoms, f_data, bond_list=None):
     f_output.close()
 
 
-def data2atoms(f_data, style):
+def data2atoms(f_data, ele,style):
     '''
     功能
     ----------
@@ -91,6 +91,7 @@ def data2atoms(f_data, style):
     参数
     ----------
     f_data: LAMMPS dada文件名
+    ele: 元素列表
     style: LAMMPS data文件的style, 比如atomic, charge, full
 
     返回值
@@ -140,7 +141,10 @@ def data2atoms(f_data, style):
                     for j in range(3):
                         types[i] = int(line[2])
                         positions[i][j] = float(line[4+j])
-        atoms = Atoms(symbols=types, positions=positions, cell=np.array([xhi-xlo, yhi-ylo, zhi-zlo]), pbc=True)
+        symbols = [None]*system_size
+        for i in range(len(types)):
+            symbols[i] = ele[types[i]-1]
+        atoms = Atoms(symbols=symbols, positions=positions, cell=np.array([xhi-xlo, yhi-ylo, zhi-zlo]), pbc=True)
         return atoms
 
 
