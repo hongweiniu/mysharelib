@@ -134,14 +134,14 @@ def data2atoms(f_data, ele, style):
     ASE中的atoms对象((单帧))
     '''
     f_input = open(f_data, 'r')
+    system_size = 0
+    xlo = 0.0
+    xhi = 0.0
+    ylo = 0.0
+    yhi = 0.0
+    zlo = 0.0
+    zhi = 0.0
     if style == 'full':
-        system_size = 0
-        xlo = 0.0
-        xhi = 0.0
-        ylo = 0.0
-        yhi = 0.0
-        zlo = 0.0
-        zhi = 0.0
         while True:
             line = f_input.readline()
             if not line:
@@ -176,6 +176,46 @@ def data2atoms(f_data, ele, style):
                     for j in range(3):
                         types[i] = int(line[2])
                         positions[i][j] = float(line[4+j])
+        symbols = [None]*system_size
+        for i in range(len(types)):
+            symbols[i] = ele[types[i]-1]
+        atoms = Atoms(symbols=symbols, positions=positions, cell=np.array([xhi-xlo, yhi-ylo, zhi-zlo]), pbc=True)
+        return atoms
+    if style == 'atomic':
+        while True:
+            line = f_input.readline()
+            if not line:
+                break
+            search = re.search(r'(\d+)\s+atoms', line)
+            if search:
+                system_size = int(search.group(1))
+            search = re.search(r'(\S+)\s+(\S+)\s+xlo\s+xhi', line)
+            if search:
+                xlo = float(search.group(1))
+                xhi = float(search.group(2))
+            search = re.search(r'(\S+)\s+(\S+)\s+ylo\s+yhi', line)
+            if search:
+                ylo = float(search.group(1))
+                yhi = float(search.group(2))
+            search = re.search(r'(\S+)\s+(\S+)\s+zlo\s+zhi', line)
+            if search:
+                zlo = float(search.group(1))
+                zhi = float(search.group(2))
+        f_input.seek(0)
+        types = np.zeros(system_size, dtype=int)
+        positions = np.zeros((system_size, 3))
+        while True:
+            line = f_input.readline()
+            if not line:
+                break
+            search = re.search(r'Atoms\n', line)
+            if search:
+                line = f_input.readline()
+                for i in range(system_size):
+                    line = f_input.readline().split()
+                    for j in range(3):
+                        types[i] = int(line[1])
+                        positions[i][j] = float(line[2+j])
         symbols = [None]*system_size
         for i in range(len(types)):
             symbols[i] = ele[types[i]-1]
