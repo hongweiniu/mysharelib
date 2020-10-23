@@ -117,7 +117,7 @@ def atoms2ipixyz(atoms, f_ipixyz):
     file_ipixyz.close()
 
 
-def data2atoms(f_data, ele,style):
+def data2atoms(f_data, ele, style):
     '''
     功能
     ----------
