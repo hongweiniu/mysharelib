@@ -86,7 +86,7 @@ def atoms2ipixyz(atoms, f_ipixyz):
     '''
     功能
     ----------
-    将atoms(单帧)转为ipi data文件
+    将atoms(单帧)转为ipi xyz文件
 
     参数
     ----------
@@ -429,6 +429,47 @@ def outcar2extxyz(f_outcar, f_extxyz, ele):
                 atoms_append.set_calculator(calc)
                 atoms += [atoms_append]
     io.write(f_extxyz, atoms, format='extxyz')
+
+
+def ipixyz2atom(f_ipixyz):
+    '''
+    功能
+    ----------
+    将ipi xyz文件转为atoms
+
+    参数
+    ----------
+    f_ipixyz: ipi xyz文件
+
+    返回值
+    ----------
+    ASE中的atoms对象
+    '''
+    cell = np.zeros([0, 6])
+    f = open(f_ipixyz, 'r')
+    while True:
+        line = f.readline()
+        if not line:
+            break
+        search = re.search(r'CELL\(abcABC\):\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)', line)
+        if search:
+            cell_append = np.zeros([1, 6])
+            for i in range(6):
+                cell_append[0][i] = float(search.group(i+1))
+            cell = np.r_[cell, cell_append]
+    f.close()
+    atoms = io.read(f_ipixyz, format='extxyz', index=':')
+    positions = [atoms[i].get_positions() for i in range(len(atoms))]
+    for i in range(len(positions)):
+        for j in range(len(positions[i])):
+            for k in range(3):
+                positions[i][j][k] %= cell[i][k]
+    for i in range(len(atoms)):
+        atoms[i].set_positions(positions[i])
+        # print(cell[i])
+        atoms[i].set_cell(cell[i])
+        atoms[i].set_pbc((1, 1, 1))
+    return atoms
 
 
 def read_bond_list_from_data(f_data):
