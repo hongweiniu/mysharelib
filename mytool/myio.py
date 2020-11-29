@@ -208,7 +208,7 @@ def data2atoms(f_data, ele, style):
             line = f_input.readline()
             if not line:
                 break
-            search = re.search(r'Atoms\n', line)
+            search = re.search(r'Atoms\s+\n', line)
             if search:
                 line = f_input.readline()
                 for i in range(system_size):
