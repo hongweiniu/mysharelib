@@ -5,8 +5,6 @@
 '''
 import re
 from io import StringIO
-from ovito.io import import_file
-from ovito.modifiers import CoordinationAnalysisModifier
 import pandas as pd
 import numpy as np
 from ase import io
