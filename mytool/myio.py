@@ -15,7 +15,7 @@ from ase.calculators.singlepoint import SinglePointCalculator as SPC
 from ase.calculators import calculator
 
 
-def atoms2data(atoms, f_data, bond_list=None):
+def atoms2data(atoms, f_data, style='atomic', bond_list=None):
     '''
     功能
     ----------
@@ -25,6 +25,7 @@ def atoms2data(atoms, f_data, bond_list=None):
     ----------
     atoms: ASE中的atoms对象
     f_data: LAMMPS dada文件名
+    style: LAMMPS data文件的style, 比如atomic, charge, full
     bond_list: bond list to write, optional
 
     返回值
@@ -59,7 +60,7 @@ def atoms2data(atoms, f_data, bond_list=None):
         if chemical_symbols[j] not in chemical_symbols_list:
             chemical_symbols_list.append(chemical_symbols[j])
         atom_types.append(chemical_symbols_list.index(chemical_symbols[j])+1)
-    f_output.write('data.txt (written by Ricky)\n\n')
+    f_output.write('data.txt (written with https://github.com/hongweiniu/mysharelib)\n\n')
     f_output.write('%d atoms\n' % len(positions))
     if bond_list is not None:
         f_output.write('%d bonds\n' % len(bond_list))
@@ -71,13 +72,18 @@ def atoms2data(atoms, f_data, bond_list=None):
     f_output.write('0.0 %f ylo yhi\n' % ly)
     f_output.write('0.0 %f zlo zhi\n' % lz)
     f_output.write('%f %f %f xy xz yz\n\n' % (xy, xz, yz))
-    f_output.write('Atoms\n\n')
-    if bond_list is None:
+    f_output.write('Atoms # %s\n\n' % style)
+    if style == 'atomic':
         for i in range(len(positions)):
             f_output.write('%d %d %f %f %f\n' % (i+1, atom_types[i], positions[i][0], positions[i][1], positions[i][2]))
-    else:
+    if style == 'charge':
+        charges = atoms.get_initial_charges()
         for i in range(len(positions)):
-            f_output.write('%d %d %d 1.0 %f %f %f\n' % (i+1, get_mol_id(i, bond_list)+1, atom_types[i], positions[i][0], positions[i][1], positions[i][2]))
+            f_output.write('%d %d %f %f %f %f\n' % (i+1, atom_types[i], charges[i], positions[i][0], positions[i][1], positions[i][2]))
+    if style == 'full':
+        charges = atoms.get_initial_charges()
+        for i in range(len(positions)):
+            f_output.write('%d %d %d %f %f %f %f\n' % (i+1, get_mol_id(i, bond_list)+1, atom_types[i], charges[i], positions[i][0], positions[i][1], positions[i][2]))
         f_output.write('\nBonds\n\n')
         for i in range(len(bond_list)):
             f_output.write('%d %d %d %d\n' % (i+1, bond_list[i][0], bond_list[i][1]+1, bond_list[i][2]+1))
@@ -117,47 +123,6 @@ def atoms2ipixyz(atoms, f_ipixyz):
             file_ipixyz.write('%f ' % positions[i][j])
         file_ipixyz.write('\n')
     file_ipixyz.close()
-
-
-def cal_rdf(filename, end, num_of_confs, every, cutoff, num_of_bins):
-    '''
-    功能
-    ----------
-    计算rdf
-
-    参数
-    ----------
-    filename: 输入结构文件名
-    end: 最后一帧
-    num_of_confs：合计结构数
-    every：每隔#帧取一次结构
-    cutoff：截断半径
-    num_of_bins：bin个数
-
-    返回值
-    ----------
-    共3列。第一列是半径r，第二列是rdf，第三列是cutoff内合计原子数。
-    '''
-    delta = cutoff/num_of_bins
-    pipeline = import_file(filename)
-    modifier = CoordinationAnalysisModifier(cutoff=cutoff, number_of_bins=num_of_bins)
-    pipeline.modifiers.append(modifier)
-    r = np.linspace(delta/2, cutoff-delta/2, num=num_of_bins)
-    total_rdf = np.zeros(modifier.number_of_bins)
-    coord_num = np.zeros(modifier.number_of_bins)
-    if end < 0:
-        end += pipeline.source.num_frames+1
-    for frame in range(end-(num_of_confs-1)*every, end+1, every):
-        data = pipeline.compute(frame)
-        current_rdf = data.series['coordination-rdf'].xy()
-        gr = current_rdf[:, 1]
-        total_rdf += gr
-        rho = data.particles.count / data.cell.volume
-        coord_num_core = gr*4*np.pi*rho*r**2
-        coord_num += np.array([np.trapz(coord_num_core[:k+1], dx=delta) for k in range(len(coord_num_core))])
-    total_rdf /= num_of_confs
-    coord_num /= num_of_confs
-    return np.column_stack((r, total_rdf, coord_num))
 
 
 def data2atoms(f_data, ele, style):
@@ -306,7 +271,7 @@ def extxyz2data(f_extxyz, f_data, frame):
         if chemical_symbols[j] not in chemical_symbols_list:
             chemical_symbols_list.append(chemical_symbols[j])
         atom_types.append(chemical_symbols_list.index(chemical_symbols[j])+1)
-    f_output.write('data.txt (written by Ricky)\n\n')
+    f_output.write('data.txt (written with https://github.com/hongweiniu/mysharelib)\n\n')
     f_output.write('%d atoms\n' % len(positions))
     f_output.write('%d atom types\n' % len(chemical_symbols_list))
     f_output.write('0.0 %f xlo xhi\n' % lx)
