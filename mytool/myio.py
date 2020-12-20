@@ -148,7 +148,7 @@ def atoms2dump(atoms, f_dump, style='atomic'):
             for j in range(len(positions)):
                 f_output.write('%d %d %f %f %f\n' %(j+1, atom_types[j], positions[j][0], positions[j][1], positions[j][2]))
         if style == 'charge':
-            charges = atoms.get_initial_charges()
+            charges = atoms[i].get_initial_charges()
             for j in range(len(positions)):
                 f_output.write('%d %d %f %f %f %f\n' %(j+1, atom_types[j], charges[j], positions[j][0], positions[j][1], positions[j][2]))
     f_output.close()
