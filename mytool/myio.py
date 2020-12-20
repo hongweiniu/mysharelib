@@ -88,6 +88,72 @@ def atoms2data(atoms, f_data, style='atomic', bond_list=None):
     f_output.close()
 
 
+def atoms2dump(atoms, f_dump, style='atomic'):
+    '''
+    功能
+    ----------
+    将atoms(单帧或多帧)转为LAMMPS dump文件
+
+    参数
+    ----------
+    atoms: ASE中的atoms对象
+    f_dump: LAMMPS dump文件名
+    style: LAMMPS dump文件的style, 比如atomic, charge
+
+    返回值
+    ----------
+    无
+    '''
+    f_output = open(f_dump, 'w')
+    for i in range(len(atoms)):
+        cell = np.array(atoms[i].get_cell())
+        volume = atoms[i].get_volume()
+        vec_A = cell[0]
+        vec_B = cell[1]
+        vec_C = cell[2]
+        lx = np.linalg.norm(vec_A)
+        xy = np.inner(vec_B, vec_A/np.linalg.norm(vec_A))
+        ly = np.sqrt(np.linalg.norm(vec_B)**2-xy**2)
+        xz = np.inner(vec_C, vec_A/np.linalg.norm(vec_A))
+        yz = (np.inner(vec_B, vec_C)-xy*xz)/ly
+        lz = np.sqrt(np.linalg.norm(vec_C)**2-xz**2-yz**2)
+        positions = atoms[i].get_positions()
+        positions = np.dot(positions, np.array([[lx, xy, xz], [0.0, ly, yz], [0.0, 0.0, lz]]))
+        positions /= volume
+        positions = np.dot(positions, np.array([np.cross(vec_B, vec_C), np.cross(vec_C, vec_A), np.cross(vec_A, vec_B)]))
+        chemical_symbols = atoms[i].get_chemical_symbols()
+        chemical_symbols_list = list()
+        atom_types = list()
+        for j in range(len(chemical_symbols)):
+            if chemical_symbols[j] not in chemical_symbols_list:
+                chemical_symbols_list.append(chemical_symbols[j])
+            atom_types.append(chemical_symbols_list.index(chemical_symbols[j])+1)
+        f_output.write('ITEM: TIMESTEP\n')
+        f_output.write('%d\n' % i)
+        f_output.write('ITEM: NUMBER OF ATOMS\n')
+        f_output.write('%d\n' % len(positions))
+        f_output.write('ITEM: BOX BOUNDS xy xz yz ')
+        f_output.write('pp pp pp\n')
+        xlo_bound = 0.0 + np.min([0.0, xy, xz, xy+xz])
+        xhi_bound = lx + np.max([0.0, xy, xz, xy+xz])
+        ylo_bound = 0.0 + np.min([0.0, yz])
+        yhi_bound = ly + np.max([0.0, yz])
+        zlo_bound = 0.0
+        zhi_bound = lz
+        f_output.write('%f %f %f\n' % (xlo_bound, xhi_bound, xy))
+        f_output.write('%f %f %f\n' % (ylo_bound, yhi_bound, xz))
+        f_output.write('%f %f %f\n' % (zlo_bound, zhi_bound, yz))
+        f_output.write('ITEM: ATOMS id type x y z\n')
+        if style == 'atomic':
+            for j in range(len(positions)):
+                f_output.write('%d %d %f %f %f\n' %(j+1, atom_types[j], positions[j][0], positions[j][1], positions[j][2]))
+        if style == 'charge':
+            charges = atoms.get_initial_charges()
+            for j in range(len(positions)):
+                f_output.write('%d %d %f %f %f %f\n' %(j+1, atom_types[j], charges[j], positions[j][0], positions[j][1], positions[j][2]))
+    f_output.close()
+
+
 def atoms2ipixyz(atoms, f_ipixyz):
     '''
     功能
@@ -229,141 +295,20 @@ def data2atoms(f_data, ele, style):
         return atoms
 
 
-def extxyz2data(f_extxyz, f_data, frame):
+def outcar2atoms(f_outcar, ele):
     '''
     功能
     ----------
-    将extxyz文件转为LAMMPS data文件
-
-    参数
-    ----------
-    f_extxyz: extxyz文件名
-    f_data: LAMMPS dada文件名
-    frame: which frame of extxyz to convert
-
-    返回值
-    ----------
-    无
-    '''
-    atoms = io.read(f_extxyz, index='%d' % frame, format='extxyz')
-    f_output = open(f_data, 'w')
-    cell = np.array(atoms.get_cell())
-    volume = atoms.get_volume()
-    vec_A = cell[0]
-    vec_B = cell[1]
-    vec_C = cell[2]
-    lx = np.linalg.norm(vec_A)
-    xy = np.inner(vec_B, vec_A/np.linalg.norm(vec_A))
-    ly = np.sqrt(np.linalg.norm(vec_B)**2-xy**2)
-    xz = np.inner(vec_C, vec_A/np.linalg.norm(vec_A))
-    yz = (np.inner(vec_B, vec_C)-xy*xz)/ly
-    lz = np.sqrt(np.linalg.norm(vec_C)**2-xz**2-yz**2)
-    positions = atoms.get_positions()
-    positions = np.dot(positions, np.array([[lx, xy, xz], [0.0, ly, yz], [0.0, 0.0, lz]]))
-    positions /= volume
-    positions = np.dot(positions, np.array([np.cross(vec_B, vec_C), np.cross(vec_C, vec_A), np.cross(vec_A, vec_B)]))
-    chemical_symbols = atoms.get_chemical_symbols()
-    chemical_symbols_list = list()
-    atom_types = list()
-    for j in range(len(chemical_symbols)):
-        if chemical_symbols[j] not in chemical_symbols_list:
-            chemical_symbols_list.append(chemical_symbols[j])
-        atom_types.append(chemical_symbols_list.index(chemical_symbols[j])+1)
-    f_output.write('data.txt (written with https://github.com/hongweiniu/mysharelib)\n\n')
-    f_output.write('%d atoms\n' % len(positions))
-    f_output.write('%d atom types\n' % len(chemical_symbols_list))
-    f_output.write('0.0 %f xlo xhi\n' % lx)
-    f_output.write('0.0 %f ylo yhi\n' % ly)
-    f_output.write('0.0 %f zlo zhi\n' % lz)
-    f_output.write('%f %f %f xy xz yz\n\n' % (xy, xz, yz))
-    f_output.write('Atoms\n\n')
-    for i in range(len(positions)):
-        f_output.write('%d %d %f %f %f\n' % (i+1, atom_types[i], positions[i][0], positions[i][1], positions[i][2]))
-    f_output.close()
-
-
-def extxyz2dump(f_extxyz, f_dump):
-    '''
-    功能
-    ----------
-    将extxyz文件转为LAMMPS dump文件
-
-    参数
-    ----------
-    f_extxyz: extxyz文件名
-    f_dump: LAMMPS dump文件名
-
-    返回值
-    ----------
-    无
-    '''
-    atoms = io.read(f_extxyz, index=':', format='extxyz')
-    f_output = open(f_dump, 'w')
-    for i in range(len(atoms)):
-        cell = np.array(atoms[i].get_cell())
-        volume = atoms[i].get_volume()
-        vec_A = cell[0]
-        vec_B = cell[1]
-        vec_C = cell[2]
-        lx = np.linalg.norm(vec_A)
-        xy = np.inner(vec_B, vec_A/np.linalg.norm(vec_A))
-        ly = np.sqrt(np.linalg.norm(vec_B)**2-xy**2)
-        xz = np.inner(vec_C, vec_A/np.linalg.norm(vec_A))
-        yz = (np.inner(vec_B, vec_C)-xy*xz)/ly
-        lz = np.sqrt(np.linalg.norm(vec_C)**2-xz**2-yz**2)
-        positions = atoms[i].get_positions()
-        positions = np.dot(positions, np.array([[lx, xy, xz], [0.0, ly, yz], [0.0, 0.0, lz]]))
-        positions /= volume
-        positions = np.dot(positions, np.array([np.cross(vec_B, vec_C), np.cross(vec_C, vec_A), np.cross(vec_A, vec_B)]))
-        chemical_symbols = atoms[i].get_chemical_symbols()
-        chemical_symbols_list = list()
-        atom_types = list()
-        for j in range(len(chemical_symbols)):
-            if chemical_symbols[j] not in chemical_symbols_list:
-                chemical_symbols_list.append(chemical_symbols[j])
-            atom_types.append(chemical_symbols_list.index(chemical_symbols[j])+1)
-        f_output.write('ITEM: TIMESTEP\n')
-        f_output.write('%d\n' % i)
-        f_output.write('ITEM: NUMBER OF ATOMS\n')
-        f_output.write('%d\n' % len(positions))
-        f_output.write('ITEM: BOX BOUNDS xy xz yz ')
-        pbc = atoms[i].get_pbc()
-        if pbc[0] == True:
-            f_output.write('pp ')
-        else:
-            f_output.write('xx ')
-        if pbc[1] == True:
-            f_output.write('pp ')
-        else:
-            f_output.write('yy ')
-        if pbc[2] == True:
-            f_output.write('pp\n')
-        else:
-            f_output.write('zz\n')
-        f_output.write('0.0 %f %f\n' % (lx, xy))
-        f_output.write('0.0 %f %f\n' % (ly, xz))
-        f_output.write('0.0 %f %f\n' % (lz, yz))
-        f_output.write('ITEM: ATOMS id type x y z\n')
-        for j in range(len(positions)):
-            f_output.write('%d %d %f %f %f\n' %(j+1, atom_types[j], positions[j][0], positions[j][1], positions[j][2]))
-    f_output.close()
-
-
-def outcar2extxyz(f_outcar, f_extxyz, ele):
-    '''
-    功能
-    ----------
-    将outcar文件转为extxyz文件
+    将outcar文件转为atoms(单帧或多帧)
 
     参数
     ----------
     f_outcar: outcar文件名
-    f_extxyz: extxyz文件名
     ele: 元素列表(需按顺序排列)
 
     返回值
     ----------
-    无
+    ASE中的atoms对象(单帧或多帧)
     '''
     calculator.all_properties.append('energy')
     calculator.all_properties.append('forces')
@@ -434,14 +379,14 @@ def outcar2extxyz(f_outcar, f_extxyz, ele):
                 calc = SPC(atoms=atoms_append, energy=energy, forces=forces)
                 atoms_append.set_calculator(calc)
                 atoms += [atoms_append]
-    io.write(f_extxyz, atoms, format='extxyz')
+    return atoms
 
 
 def ipixyz2atom(f_ipixyz):
     '''
     功能
     ----------
-    将ipi xyz文件转为atoms
+    将ipi xyz文件转为atoms(单帧或多帧)
 
     参数
     ----------
@@ -449,7 +394,7 @@ def ipixyz2atom(f_ipixyz):
 
     返回值
     ----------
-    ASE中的atoms对象
+    ASE中的atoms对象(单帧或多帧)
     '''
     cell = np.zeros([0, 6])
     f = open(f_ipixyz, 'r')
