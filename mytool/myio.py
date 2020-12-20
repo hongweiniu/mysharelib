@@ -496,7 +496,7 @@ def read_lammps_thermo(filename):
         line = f_lammps_out.readline()
         if not line:
             break
-        search = re.search('Temp', line)
+        search = re.search('Step', line)
         if search:
             str_lammps_out = line
             while True:
