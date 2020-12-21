@@ -6,7 +6,7 @@
 import numpy as np
 
 
-def seq(first, increment, last):
+def seq(*args):
     '''
     功能
     ----------
@@ -14,13 +14,18 @@ def seq(first, increment, last):
 
     参数
     ----------
-    first: 第一个数
-    increment: 间隔
-    last：最后一个数
-    type: 数据类型
+    一个两个或者三个数
 
     返回值
     ----------
     numpy array
     '''
-    return np.arange(first, last+increment, increment)
+    if len(args) == 1:
+        return np.arange(1, args[0]+1)
+    elif len(args) == 2:
+        return np.arange(args[0], args[1]+1)
+    elif len(args) == 3:
+        return np.arange(args[0], args[2]+args[1], args[1])
+    else:
+        print('error using mytool.myfun.seq!!!')
+        exit('1')
