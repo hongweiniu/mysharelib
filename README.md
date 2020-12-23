@@ -26,5 +26,5 @@ export PYTHONPATH=/.../some/mysharelib:$PYTHONPATH
 
 ```python
 from mytool import myio
-myio.extxyz2dump('test.xyz', 'test.dump.atom')
+myio.atoms2data(atoms, 'data.txt')
 ```

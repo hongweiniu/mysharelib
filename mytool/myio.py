@@ -4,6 +4,7 @@
 一些常用的io函数
 '''
 import re
+import os
 from io import StringIO
 import pandas as pd
 import numpy as np
@@ -188,6 +189,47 @@ def atoms2ipixyz(atoms, f_ipixyz):
             file_ipixyz.write('%f ' % positions[i][j])
         file_ipixyz.write('\n')
     file_ipixyz.close()
+
+
+def atoms2raw(atoms, ele, d_raw='.'):
+    '''
+    功能
+    ----------
+    将atoms(单帧或多帧)转为DeePMD的raw文件
+
+    参数
+    ----------
+    d_raw: 生成raw文件的路径
+    atoms: ASE中的atoms对象
+    ele: 元素列表
+
+    返回值
+    ----------
+    无
+    '''
+    system_size = len(atoms[0])
+    box = np.zeros((len(atoms), 9))
+    energy = np.zeros(len(atoms))
+    positions = np.zeros((len(atoms), system_size*3))
+    forces = np.zeros((len(atoms), system_size*3))
+    for i in range(len(atoms)):
+        for j in range(3):
+            box[i][3*j:3*j+3] = atoms[i].get_cell()[j]
+        energy[i] = atoms[i].get_potential_energy()
+        positions[i] = atoms[i].get_positions().flatten(order='C')
+        forces[i] = atoms[i].get_forces().flatten(order='C')
+    os.makedirs(d_raw, exist_ok=True)
+    np.savetxt('%s/box.raw' % d_raw, box)
+    np.savetxt('%s/energy.raw' % d_raw, energy)
+    np.savetxt('%s/coord.raw' % d_raw, positions)
+    np.savetxt('%s/force.raw' % d_raw, forces)
+    symbols = atoms[0].get_chemical_symbols()
+    type_array = np.zeros(system_size, dtype=int)
+    for i in range(len(symbols)):
+        for j in range(len(ele)):
+            if symbols[i] == ele[j]:
+                type_array[i] = j
+    np.savetxt('%s/type.raw' % d_raw, type_array, fmt='%d')
 
 
 def data2atoms(f_data, ele, style):
