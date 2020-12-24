@@ -232,6 +232,38 @@ def atoms2raw(atoms, ele, d_raw='.'):
     np.savetxt('%s/type.raw' % d_raw, type_array, fmt='%d')
 
 
+def atoms2vasp(atoms, f_vasp, ele):
+    '''
+    功能
+    ----------
+    将atoms(单帧)转为vasp的结构文件(POSCAR, CONTCAR)。这个功能其实ase也有，但ase不会自动把所有原子按元素种类排序。
+
+    参数
+    ----------
+    atoms: ASE中的atoms对象(单帧)
+    f_vasp: 生成vasp的结构文件(POSCAR, CONTCAR)路径
+    ele: 元素列表
+
+    返回值
+    ----------
+    无
+    '''
+    symbols = atoms[0].get_chemical_symbols()
+    positions = atoms[0].get_positions()
+    cell = atoms[0].get_cell()
+    symbols_sort = list()
+    positions_sort = np.zeros([len(positions), 3])
+    counter = 0
+    for i in range(len(ele)):
+        for j in range(len(symbols)):
+            if symbols[j] == ele[i]:
+                symbols_sort.append(symbols[j])
+                positions_sort[counter] = positions[j]
+                counter += 1
+    atoms_sort = Atoms(symbols=symbols_sort, positions=positions_sort, cell=cell, pbc=True)
+    io.write(f_vasp, atoms_sort, format='vasp')
+
+
 def data2atoms(f_data, ele, style):
     '''
     功能
