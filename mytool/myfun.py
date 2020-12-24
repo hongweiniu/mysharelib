@@ -3,7 +3,25 @@
 ----------
 一些常用的函数
 '''
+import os
 import numpy as np
+
+
+def mkdir(path):
+    '''
+    功能
+    ----------
+    模仿Shell里的mkdir
+
+    参数
+    ----------
+    path: 文件夹路径
+
+    返回值
+    ----------
+    无
+    '''
+    os.makedirs(path, exist_ok=True)
 
 
 def seq(*args):
