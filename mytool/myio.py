@@ -567,13 +567,16 @@ def read_lammps_thermo(filename):
     '''
     f_lammps_out = open(filename, 'r')
     str_lammps_out = ''
+    counter = 0
     while True:
         line = f_lammps_out.readline()
         if not line:
             break
         search = re.search('Step', line)
         if search:
-            str_lammps_out = line
+            if counter == 0:
+                str_lammps_out += line
+                counter += 1
             while True:
                 line = f_lammps_out.readline()
                 search1 = re.search(r'[(\-|\+)?\d+(\.\d+)?\s+]+\n$', line)
