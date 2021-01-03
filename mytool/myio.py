@@ -579,6 +579,8 @@ def read_lammps_thermo(filename):
                 counter += 1
             while True:
                 line = f_lammps_out.readline()
+                if not line:
+                    break
                 search1 = re.search(r'[(\-|\+)?\d+(\.\d+)?\s+]+\n$', line)
                 search2 = re.search(r'Loop time of', line)
                 if search1:
