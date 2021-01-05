@@ -587,6 +587,8 @@ def read_lammps_thermo(filename):
                     str_lammps_out += line
                 if search2:
                     break
+    if str_lammps_out == '':
+        return pd.DataFrame()
     data = StringIO(str_lammps_out)
     data_frame = pd.read_csv(data, sep=r'\s+')
     return data_frame
