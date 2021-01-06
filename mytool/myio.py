@@ -14,7 +14,7 @@ from ase.calculators.singlepoint import SinglePointCalculator as SPC
 from ase.calculators import calculator
 
 
-def atoms2data(atoms, f_data, style='atomic', bond_list=None):
+def atoms2data(atoms, f_data, style='atomic', bond_list=None, boxorth=False):
     '''
     功能
     ----------
@@ -70,7 +70,8 @@ def atoms2data(atoms, f_data, style='atomic', bond_list=None):
     f_output.write('0.0 %f xlo xhi\n' % lx)
     f_output.write('0.0 %f ylo yhi\n' % ly)
     f_output.write('0.0 %f zlo zhi\n' % lz)
-    f_output.write('%f %f %f xy xz yz\n\n' % (xy, xz, yz))
+    if boxorth == False:
+        f_output.write('%f %f %f xy xz yz\n\n' % (xy, xz, yz))
     f_output.write('Atoms # %s\n\n' % style)
     if style == 'atomic':
         for i in range(len(positions)):
