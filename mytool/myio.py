@@ -229,7 +229,7 @@ def atoms2raw(atoms, ele, d_raw='.', virial=False):
         calculator.all_properties.append('virial')
         virials = np.zeros((len(atoms), 9))
         for i in range(len(atoms)):
-            virial[i] = atoms[i].get_calculator().results['virial'].ravel()
+            virials[i] = atoms[i].__dict__['info']['virial'].ravel()
         np.savetxt('%s/virial.raw' % d_raw, virials)
     symbols = atoms[0].get_chemical_symbols()
     type_array = np.zeros(system_size, dtype=int)
