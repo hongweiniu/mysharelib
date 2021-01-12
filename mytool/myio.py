@@ -192,7 +192,7 @@ def atoms2ipixyz(atoms, f_ipixyz):
     file_ipixyz.close()
 
 
-def atoms2raw(atoms, ele, d_raw='.'):
+def atoms2raw(atoms, ele, d_raw='.', virial=False):
     '''
     功能
     ----------
@@ -203,6 +203,7 @@ def atoms2raw(atoms, ele, d_raw='.'):
     d_raw: 生成raw文件的路径
     atoms: ASE中的atoms对象
     ele: 元素列表
+    virial: 是否生成virial信息
 
     返回值
     ----------
@@ -224,6 +225,12 @@ def atoms2raw(atoms, ele, d_raw='.'):
     np.savetxt('%s/energy.raw' % d_raw, energy)
     np.savetxt('%s/coord.raw' % d_raw, positions)
     np.savetxt('%s/force.raw' % d_raw, forces)
+    if virial == True:
+        calculator.all_properties.append('virial')
+        virials = np.zeros((len(atoms), 9))
+        for i in range(len(atoms)):
+            virial[i] = atoms[i].get_calculator().results['virial'].ravel()
+        np.savetxt('%s/virial.raw' % d_raw, virials)
     symbols = atoms[0].get_chemical_symbols()
     type_array = np.zeros(system_size, dtype=int)
     for i in range(len(symbols)):
