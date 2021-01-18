@@ -256,9 +256,9 @@ def atoms2vasp(atoms, f_vasp, ele):
     ----------
     无
     '''
-    symbols = atoms[0].get_chemical_symbols()
-    positions = atoms[0].get_positions()
-    cell = atoms[0].get_cell()
+    symbols = atoms.get_chemical_symbols()
+    positions = atoms.get_positions()
+    cell = atoms.get_cell()
     symbols_sort = list()
     positions_sort = np.zeros([len(positions), 3])
     counter = 0
