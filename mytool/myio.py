@@ -601,3 +601,29 @@ def read_lammps_thermo(filename):
     data = StringIO(str_lammps_out)
     data_frame = pd.read_csv(data, sep=r'\s+')
     return data_frame
+
+
+def read_vasp_energy(filename):
+    '''
+    功能
+    ----------
+    读vasp的OUTCAR文件中的能量
+
+    参数
+    ----------
+    filename: 文件名
+
+    返回值
+    ----------
+    float
+    '''
+    f_outcar = open(filename, 'r')
+    energy = 0.0
+    while True:
+        line = f_outcar.readline()
+        if not line:
+            break
+        search = re.search(r'energy\(sigma->0\)\s+=\s+(\S+)', line)
+        if search:
+            energy = float(search.group(1))
+    return energy
