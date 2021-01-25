@@ -240,7 +240,7 @@ def atoms2raw(atoms, ele, d_raw='.', virial=False):
     np.savetxt('%s/type.raw' % d_raw, type_array, fmt='%d')
 
 
-def atoms2vasp(atoms, f_vasp, ele):
+def atoms2vasp(atoms, f_vasp, ele, direct=False):
     '''
     功能
     ----------
@@ -251,6 +251,7 @@ def atoms2vasp(atoms, f_vasp, ele):
     atoms: ASE中的atoms对象(单帧)
     f_vasp: 生成vasp的结构文件(POSCAR, CONTCAR)路径
     ele: 元素列表
+    direct: 是否为分数坐标
 
     返回值
     ----------
@@ -269,7 +270,7 @@ def atoms2vasp(atoms, f_vasp, ele):
                 positions_sort[counter] = positions[j]
                 counter += 1
     atoms_sort = Atoms(symbols=symbols_sort, positions=positions_sort, cell=cell, pbc=True)
-    io.write(f_vasp, atoms_sort, format='vasp')
+    io.write(f_vasp, atoms_sort, format='vasp', direct=direct)
 
 
 def data2atoms(f_data, ele, style):
