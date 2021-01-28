@@ -592,7 +592,7 @@ def read_lammps_thermo(filename):
                     break
                 search1 = re.search(r'[(\-|\+)?\d+(\.\d+)?\s+]+\n$', line)
                 search2 = re.search(r'Loop time of', line)
-                search3 = re.search(r'[A-Za-z]', line)
+                search3 = re.search(r'[A-Za-df-z]', line)
                 if search1 and not search3:
                     str_lammps_out += line
                 if search2:
